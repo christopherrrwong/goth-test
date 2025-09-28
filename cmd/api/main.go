@@ -11,7 +11,7 @@ func main() {
 	auth.Auth()
 
 	server := &http.Server{
-		Addr:    ":3000", // Hardcoded port
+		Addr:    ":3000",
 		Handler: server.NewServer().Handler,
 	}
 
