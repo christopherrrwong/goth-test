@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+session:
+  maxAge: 2592000  # 30 days in seconds
+  isProd: true
+  httpOnly: true
+
+auth0:
+  clientId: ""
+  clientSecret: ""
+  domain: ""
+  callbackUrl: "https://yourdomain.com/sso-auth/auth0/callback"
+
+cors:
+  allowedOrigins:
+    - "https://yourdomain.com"
+  allowedMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+    - "PATCH"
+  allowedHeaders:
+    - "Accept"
+    - "Authorization"
+    - "Content-Type"
+  allowCredentials: true
+  maxAge: 300

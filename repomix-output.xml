@@ -1,0 +1,717 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+cmd/
+  api/
+    main.go
+internal/
+  auth/
+    auth.go
+  config/
+    config.dev.yaml
+    config.go
+    config.prod.yaml
+  database/
+    migrations/
+      001_init.sql
+    database.go
+  server/
+    routes.go
+    server.go
+.gitignore
+go.mod
+Makefile
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="internal/config/config.dev.yaml">
+server:
+  port: 3000
+
+session:
+  maxAge: 2592000  # 30 days in seconds
+  isProd: false
+  httpOnly: true
+
+auth0:
+  clientId: fri8Ts4HIWDtcVSbaAfLe1bSZSU62S5n
+  clientSecret: bVyK8X69361z0OyMexV8FdrIcomvzp6uUxdOM_KpputYldtWJmJEXXXfiKiBOrE4
+  domain: dev-i20fi4w0wonkzxbt.us.auth0.com
+  callbackUrl: "http://localhost:3000/sso-auth/auth0/callback"
+
+saml:
+  idpMetadataURL: "https://dummyidp.com/apps/app_01k5qr8k1kr1e457dmsfr0acmh/metadata"
+  rootURL: "http://localhost:3000"
+  entityID: "http://localhost:3000"
+
+cors:
+  allowedOrigins:
+    - "https://*"
+    - "http://*"
+  allowedMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+    - "PATCH"
+  allowedHeaders:
+    - "Accept"
+    - "Authorization"
+    - "Content-Type"
+  allowCredentials: true
+  maxAge: 300
+</file>
+
+<file path="internal/config/config.go">
+package config
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/viper"
+)
+
+type Config struct {
+	Server struct {
+		Port int `mapstructure:"port"`
+	} `mapstructure:"server"`
+
+	Session struct {
+		MaxAge   int  `mapstructure:"maxAge"`
+		IsProd   bool `mapstructure:"isProd"`
+		HttpOnly bool `mapstructure:"httpOnly"`
+	} `mapstructure:"session"`
+
+	Auth0 struct {
+		ClientID     string `mapstructure:"clientId"`
+		ClientSecret string `mapstructure:"clientSecret"`
+		Domain       string `mapstructure:"domain"`
+		CallbackURL  string `mapstructure:"callbackUrl"`
+	} `mapstructure:"auth0"`
+
+	Saml struct {
+		IDPMetadataURL string `mapstructure:"idpMetadataURL"`
+		RootURL        string `mapstructure:"rootURL"`
+		EntityID       string `mapstructure:"entityID"`
+	} `mapstructure:"saml"`
+
+	Cors struct {
+		AllowedOrigins   []string `mapstructure:"allowedOrigins"`
+		AllowedMethods   []string `mapstructure:"allowedMethods"`
+		AllowedHeaders   []string `mapstructure:"allowedHeaders"`
+		AllowCredentials bool     `mapstructure:"allowCredentials"`
+		MaxAge           int      `mapstructure:"maxAge"`
+	} `mapstructure:"cors"`
+}
+
+func LoadConfig() (*Config, error) {
+
+	env := os.Getenv("ENVIRONMENT")
+	if env == "" {
+		env = "dev"
+	}
+
+	return loadConfig(env)
+}
+
+func LoadConfigForEnv(env string) (*Config, error) {
+	return loadConfig(env)
+}
+
+func loadConfig(env string) (*Config, error) {
+
+	viper.SetConfigType("yaml")
+	var configFile string
+
+	switch env {
+	case "dev", "development":
+		configFile = "internal/config/config.dev.yaml"
+	case "prod", "production":
+		configFile = "internal/config/config.prod.yaml"
+	case "staging":
+		configFile = "internal/config/config.staging.yaml"
+	default:
+		return nil, fmt.Errorf("unknown environment: %s", env)
+	}
+
+	viper.SetConfigFile(configFile)
+
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("error reading config file %s: %s", configFile, err)
+	}
+
+	// Map the config file values into the Config struct
+	var config Config
+	if err := viper.Unmarshal(&config); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal config: %v", err)
+	}
+
+	return &config, nil
+}
+</file>
+
+<file path="internal/config/config.prod.yaml">
+server:
+  port: 8080
+
+session:
+  maxAge: 2592000  # 30 days in seconds
+  isProd: true
+  httpOnly: true
+
+auth0:
+  clientId: ""
+  clientSecret: ""
+  domain: ""
+  callbackUrl: "https://yourdomain.com/sso-auth/auth0/callback"
+
+cors:
+  allowedOrigins:
+    - "https://yourdomain.com"
+  allowedMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+    - "PATCH"
+  allowedHeaders:
+    - "Accept"
+    - "Authorization"
+    - "Content-Type"
+  allowCredentials: true
+  maxAge: 300
+</file>
+
+<file path="internal/database/migrations/001_init.sql">
+DROP TABLE IF EXISTS `sso_integration_mapping`;
+CREATE TABLE `sso_integration_mapping` (
+  `id` int(11) NOT NULL auto_increment,
+  `ssousername` varchar(255) NOT NULL,
+  `aclusername` varchar(80) NOT NULL DEFAULT '',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+</file>
+
+<file path=".gitignore">
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with "go test -c"
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+tmp/
+
+# IDE specific files
+.vscode
+.idea
+
+# .env file
+.env
+
+# Project build
+main
+*templ.go
+
+# OS X generated file
+.DS_Store
+</file>
+
+<file path="go.mod">
+module gothtest
+
+go 1.25.1
+
+require (
+	github.com/go-chi/chi/v5 v5.2.3
+	github.com/go-chi/cors v1.2.2
+	github.com/gorilla/sessions v1.4.0
+	github.com/joho/godotenv v1.5.1
+	github.com/markbates/goth v1.82.0
+	github.com/spf13/viper v1.21.0
+)
+
+require (
+	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/beevik/etree v1.5.0 // indirect
+	github.com/crewjam/saml v0.5.1 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
+	github.com/go-sql-driver/mysql v1.9.3 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
+	github.com/jonboulle/clockwork v0.2.2 // indirect
+	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
+	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/russellhaering/goxmldsig v1.4.0 // indirect
+	github.com/sagikazarmark/locafero v0.11.0 // indirect
+	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
+	github.com/spf13/afero v1.15.0 // indirect
+	github.com/spf13/cast v1.10.0 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
+	github.com/subosito/gotenv v1.6.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
+	golang.org/x/oauth2 v0.30.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
+)
+</file>
+
+<file path="Makefile">
+# Simple Makefile for a Go project
+
+# Build the application
+all: build test
+
+build:
+	@echo "Building..."
+	
+	
+	@go build -o main cmd/api/main.go
+
+# Run the application
+run:
+	@go run cmd/api/main.go
+# Create DB container
+docker-run:
+	@if docker compose up --build 2>/dev/null; then \
+		: ; \
+	else \
+		echo "Falling back to Docker Compose V1"; \
+		docker-compose up --build; \
+	fi
+
+# Shutdown DB container
+docker-down:
+	@if docker compose down 2>/dev/null; then \
+		: ; \
+	else \
+		echo "Falling back to Docker Compose V1"; \
+		docker-compose down; \
+	fi
+
+# Test the application
+test:
+	@echo "Testing..."
+	@go test ./... -v
+# Integrations Tests for the application
+itest:
+	@echo "Running integration tests..."
+	@go test ./internal/database -v
+
+# Clean the binary
+clean:
+	@echo "Cleaning..."
+	@rm -f main
+
+# Live Reload
+watch:
+	@if command -v air > /dev/null; then \
+            air; \
+            echo "Watching...";\
+        else \
+            read -p "Go's 'air' is not installed on your machine. Do you want to install it? [Y/n] " choice; \
+            if [ "$$choice" != "n" ] && [ "$$choice" != "N" ]; then \
+                go install github.com/air-verse/air@latest; \
+                air; \
+                echo "Watching...";\
+            else \
+                echo "You chose not to install air. Exiting..."; \
+                exit 1; \
+            fi; \
+        fi
+
+.PHONY: all build run test clean watch docker-run docker-down itest
+</file>
+
+<file path="README.md">
+# Project gothtest
+
+One Paragraph of project description goes here
+
+## Getting Started
+
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+
+## MakeFile
+
+
+
+Build the application
+```bash
+make build
+```
+
+Run the application
+```bash
+make run
+```
+</file>
+
+<file path="cmd/api/main.go">
+package main
+
+import (
+	"fmt"
+	"gothtest/internal/auth"
+	"gothtest/internal/config"
+	"gothtest/internal/database"
+	"gothtest/internal/server"
+	"log"
+	"os"
+)
+
+func main() {
+
+	env := os.Getenv("ENVIRONMENT")
+	if env == "" {
+		env = "dev"
+	}
+	config, err := config.LoadConfigForEnv(env)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := auth.Auth(config); err != nil {
+		log.Fatalf("Failed to initialize auth: %v", err)
+	}
+
+	srv := server.NewServer(config)
+
+	err = srv.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := database.NewConnection(); err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer database.Close()
+
+	fmt.Printf("Environment: %s\n", env)
+	fmt.Printf("Server is running on %s:%d\n", config.Server.Port)
+
+}
+</file>
+
+<file path="internal/auth/auth.go">
+package auth
+
+import (
+	"crypto/rand"
+	"fmt"
+	"log"
+	"net/http"
+
+	"gothtest/internal/config"
+
+	"github.com/gorilla/sessions"
+	"github.com/markbates/goth"
+	"github.com/markbates/goth/gothic"
+	"github.com/markbates/goth/providers/auth0"
+)
+
+func GenerateRandomKey(length int) ([]byte, error) {
+	key := make([]byte, length)
+	_, err := rand.Read(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read random bytes: %w", err)
+	}
+	return key, nil
+}
+
+func Auth(config *config.Config) error {
+
+	var providers []goth.Provider
+
+	auth0ClientID := config.Auth0.ClientID
+	auth0ClientSecret := config.Auth0.ClientSecret
+	auth0Domain := config.Auth0.Domain
+	auth0CallbackURL := config.Auth0.CallbackURL
+
+	validAuth0Config := auth0ClientID != "" && auth0ClientSecret != "" && auth0Domain != "" && auth0CallbackURL != ""
+
+	if validAuth0Config {
+		providers = append(providers, auth0.New(
+			auth0ClientID,
+			auth0ClientSecret,
+			auth0CallbackURL,
+			auth0Domain,
+		))
+	}
+
+	var MaxAge = config.Session.MaxAge
+	var IsProd = config.Session.IsProd
+	sessionKey, err := GenerateRandomKey(32)
+	if err != nil {
+		log.Fatal("Error generating random key: %v", err)
+	}
+
+	var store = sessions.NewCookieStore([]byte(sessionKey))
+	store.Options.MaxAge = MaxAge
+	store.Options.Secure = IsProd
+	store.Options.HttpOnly = config.Session.HttpOnly
+	store.Options.SameSite = http.SameSiteLaxMode
+	store.Options.Domain = "localhost" // Allow cookie to work across different ports on localhost
+	gothic.Store = store
+
+	goth.UseProviders(
+		providers...,
+	)
+
+	return nil
+}
+</file>
+
+<file path="internal/database/database.go">
+package database
+
+import (
+	"crypto/md5"
+	"crypto/rand"
+	"database/sql"
+	"encoding/hex"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/go-sql-driver/mysql"
+)
+
+var DB *sql.DB
+
+func NewConnection() error {
+	cfg := mysql.NewConfig()
+	cfg.User = os.Getenv("DBUSER")
+	cfg.Passwd = os.Getenv("DBPASS")
+	cfg.Net = "tcp"
+	cfg.Addr = "127.0.0.1:3306"
+	cfg.DBName = "sso_integration_mapping"
+
+	var err error
+	DB, err = sql.Open("mysql", cfg.FormatDSN())
+	if err != nil {
+		return fmt.Errorf("error opening database: %v", err)
+	}
+
+	if err := DB.Ping(); err != nil {
+		return fmt.Errorf("error connecting to the database: %v", err)
+	}
+
+	return nil
+}
+
+func Close() error {
+	if DB != nil {
+		return DB.Close()
+	}
+	return nil
+}
+
+func InsertSSOIntegrationMapping(ssoUsername string, aclUsername string, uuid string) error {
+	token := GenerateToken()
+	findUser, err := DB.Query("SELECT * FROM sso_integration_mapping WHERE ssousername = ?", ssoUsername)
+	if err != nil {
+		return fmt.Errorf("insertSSOIntegrationMapping: %v", err)
+	}
+	if findUser.Next() {
+		_, err = DB.Query("INSERT INTO api_token (`username`, `token`) VALUES (?, ?)", aclUsername, token)
+		if err != nil {
+			return fmt.Errorf("error inserting api token: %v", err)
+		}
+		_, err = DB.Query("INSERT INTO acl_qr (`uuid`, `token`, `device_name`) VALUES (?, ?, ?)", uuid, token, uuid)
+		if err != nil {
+			return fmt.Errorf("error inserting acl qr: %v", err)
+		}
+	}
+	return nil
+}
+
+func GenerateToken() string {
+	uniqueID1 := generateUniqID()
+	hash1 := md5Hash(uniqueID1)
+
+	// Generate second unique ID
+	uniqueID2 := generateUniqID()
+	hash2 := md5Hash(uniqueID2)
+
+	// Combine both hashes
+	return hash1 + hash2
+}
+
+func generateUniqID() string {
+	// Get current timestamp in microseconds
+	now := time.Now().UnixNano() / 1000
+
+	// Generate 8 random bytes
+	b := make([]byte, 8)
+	rand.Read(b)
+
+	// Combine timestamp and random bytes
+	return fmt.Sprintf("%d%x", now, b)
+}
+
+func md5Hash(input string) string {
+	hash := md5.New()
+	hash.Write([]byte(input))
+	return hex.EncodeToString(hash.Sum(nil))
+}
+</file>
+
+<file path="internal/server/routes.go">
+package server
+
+import (
+	"context"
+	"fmt"
+	"gothtest/internal/database"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
+	"github.com/markbates/goth/gothic"
+)
+
+func (s *Server) RegisterRoutes() http.Handler {
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   s.config.Cors.AllowedOrigins,
+		AllowedMethods:   s.config.Cors.AllowedMethods,
+		AllowedHeaders:   s.config.Cors.AllowedHeaders,
+		AllowCredentials: s.config.Cors.AllowCredentials,
+		MaxAge:           s.config.Cors.MaxAge,
+	}))
+
+	r.Get("/sso-auth/{provider}/callback", s.getAuthCallBackHandler)
+	r.Get("/sso-auth/{provider}", s.getLoginHandler)
+
+	return r
+}
+
+func (s *Server) getAuthCallBackHandler(w http.ResponseWriter, r *http.Request) {
+
+	provider := chi.URLParam(r, "provider")
+	uuid := r.URL.Query().Get("uuid")
+
+	r = r.WithContext(context.WithValue(r.Context(), "provider", provider))
+
+	user, err := gothic.CompleteUserAuth(w, r)
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+
+	if user.Provider == "auth0" {
+		err = database.InsertSSOIntegrationMapping(user.Name, user.UserID, uuid)
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+	}
+
+}
+
+func (s *Server) getLoginHandler(w http.ResponseWriter, r *http.Request) {
+	provider := chi.URLParam(r, "provider")
+	r = r.WithContext(context.WithValue(r.Context(), "provider", provider))
+	gothic.BeginAuthHandler(w, r)
+}
+</file>
+
+<file path="internal/server/server.go">
+package server
+
+import (
+	"fmt"
+	"gothtest/internal/config"
+	"net/http"
+	"time"
+
+	_ "github.com/joho/godotenv/autoload"
+)
+
+type Server struct {
+	config *config.Config
+}
+
+func NewServer(cfg *config.Config) *http.Server {
+	s := &Server{
+		config: cfg,
+	}
+
+	server := &http.Server{
+		Addr:         fmt.Sprintf(":%d", s.config.Server.Port),
+		Handler:      s.RegisterRoutes(),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
+
+	return server
+}
+</file>
+
+</files>

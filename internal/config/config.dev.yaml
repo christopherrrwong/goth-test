@@ -1,0 +1,37 @@
+server:
+  port: 3000
+
+session:
+  maxAge: 2592000  # 30 days in seconds
+  isProd: false
+  httpOnly: true
+
+auth0:
+  clientId: fri8Ts4HIWDtcVSbaAfLe1bSZSU62S5n
+  clientSecret: bVyK8X69361z0OyMexV8FdrIcomvzp6uUxdOM_KpputYldtWJmJEXXXfiKiBOrE4
+  domain: dev-i20fi4w0wonkzxbt.us.auth0.com
+  callbackUrl: "http://localhost:3000/sso-auth/auth0/callback"
+
+saml:
+  idpMetadataURL: "https://dummyidp.com/apps/app_01k5qr8k1kr1e457dmsfr0acmh/metadata"
+  rootURL: "http://localhost:3000"
+  entityID: "http://localhost:3000"
+
+cors:
+  allowedOrigins:
+    - "https://*"
+    - "http://*"
+  allowedMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+    - "PATCH"
+  allowedHeaders:
+    - "Accept"
+    - "Authorization"
+    - "Content-Type"
+  allowCredentials: true
+  maxAge: 300
+  

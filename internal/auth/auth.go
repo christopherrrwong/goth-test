@@ -1,15 +1,14 @@
 package auth
 
 import (
-	"net/http"
-	"os"
-
 	"crypto/rand"
 	"fmt"
 	"log"
+	"net/http"
+
+	"gothtest/internal/config"
 
 	"github.com/gorilla/sessions"
-	"github.com/joho/godotenv"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/auth0"
@@ -24,17 +23,14 @@ func GenerateRandomKey(length int) ([]byte, error) {
 	return key, nil
 }
 
-func Auth() {
-	var providers []goth.Provider
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+func Auth(config *config.Config) error {
 
-	auth0ClientID := os.Getenv("AUTH0_CLIENT_ID")
-	auth0ClientSecret := os.Getenv("AUTH0_SECRET")
-	auth0Domain := os.Getenv("AUTH0_DOMAIN")
-	auth0CallbackURL := os.Getenv("AUTH0_CALLBACK_URL")
+	var providers []goth.Provider
+
+	auth0ClientID := config.Auth0.ClientID
+	auth0ClientSecret := config.Auth0.ClientSecret
+	auth0Domain := config.Auth0.Domain
+	auth0CallbackURL := config.Auth0.CallbackURL
 
 	validAuth0Config := auth0ClientID != "" && auth0ClientSecret != "" && auth0Domain != "" && auth0CallbackURL != ""
 
@@ -47,8 +43,8 @@ func Auth() {
 		))
 	}
 
-	var MaxAge = 86400 * 30
-	var IsProd = false
+	var MaxAge = config.Session.MaxAge
+	var IsProd = config.Session.IsProd
 	sessionKey, err := GenerateRandomKey(32)
 	if err != nil {
 		log.Fatal("Error generating random key: %v", err)
@@ -57,11 +53,14 @@ func Auth() {
 	var store = sessions.NewCookieStore([]byte(sessionKey))
 	store.Options.MaxAge = MaxAge
 	store.Options.Secure = IsProd
-	store.Options.HttpOnly = true
+	store.Options.HttpOnly = config.Session.HttpOnly
 	store.Options.SameSite = http.SameSiteLaxMode
+	store.Options.Domain = "localhost" // Allow cookie to work across different ports on localhost
 	gothic.Store = store
 
 	goth.UseProviders(
 		providers...,
 	)
+
+	return nil
 }
