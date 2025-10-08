@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"gothtest/internal/auth"
-	"gothtest/internal/config"
-	"gothtest/internal/database"
-	"gothtest/internal/server"
 	"log"
 	"os"
+	"sso-auth/internal/auth"
+	"sso-auth/internal/config"
+	"sso-auth/internal/database"
+	"sso-auth/internal/server"
 )
 
 func main() {
@@ -22,14 +22,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := auth.Auth(config); err != nil {
-		log.Fatalf("Failed to initialize auth: %v", err)
-	}
-
 	if err := database.NewConnection(); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer database.Close()
+
+	if err := auth.Auth(config); err != nil {
+		log.Fatalf("Failed to initialize auth: %v", err)
+	}
 
 	srv := server.NewServer(config)
 

@@ -2,8 +2,8 @@ package server
 
 import (
 	"fmt"
-	"gothtest/internal/config"
 	"net/http"
+	"sso-auth/internal/config"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"

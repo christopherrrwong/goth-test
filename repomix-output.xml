@@ -48,16 +48,23 @@ internal/
     auth.go
   config/
     config.dev.yaml
+    config.dev.yaml.example
     config.go
     config.prod.yaml
+    config.prod.yaml.example
   database/
     migrations/
-      001_init.sql
+      002_create_tables.sql
+      003_test_data.sql
     database.go
   server/
     routes.go
     server.go
+  utils/
+    token.go
 .gitignore
+CONFIG_SETUP.md
+example.env
 go.mod
 Makefile
 README.md
@@ -65,6 +72,189 @@ README.md
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="internal/config/config.dev.yaml.example">
+server:
+  port: 3000
+
+session:
+  maxAge: 2592000  # 30 days in seconds
+  isProd: false
+  httpOnly: true
+
+auth0:
+  clientId: "your_auth0_client_id"
+  clientSecret: "your_auth0_client_secret"
+  domain: "your-tenant.us.auth0.com"
+  callbackUrl: "http://localhost:3000/sso-auth/auth0/callback"
+
+saml:
+  idpMetadataURL: "https://your-idp.com/metadata"
+  rootURL: "http://localhost:3000"
+  entityID: "http://localhost:3000"
+
+cors:
+  allowedOrigins:
+    - "https://*"
+    - "http://*"
+  allowedMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+    - "PATCH"
+  allowedHeaders:
+    - "Accept"
+    - "Authorization"
+    - "Content-Type"
+  allowCredentials: true
+  maxAge: 300
+</file>
+
+<file path="internal/config/config.prod.yaml.example">
+server:
+  port: 8080
+
+session:
+  maxAge: 2592000  # 30 days in seconds
+  isProd: true
+  httpOnly: true
+
+auth0:
+  clientId: "your_auth0_client_id"
+  clientSecret: "your_auth0_client_secret"
+  domain: "your-tenant.us.auth0.com"
+  callbackUrl: "https://yourdomain.com/sso-auth/auth0/callback"
+
+cors:
+  allowedOrigins:
+    - "https://yourdomain.com"
+  allowedMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+    - "PATCH"
+  allowedHeaders:
+    - "Accept"
+    - "Authorization"
+    - "Content-Type"
+  allowCredentials: true
+  maxAge: 300
+</file>
+
+<file path="internal/utils/token.go">
+package utils
+
+import (
+	"crypto/md5"
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+	"time"
+)
+
+func GenerateToken() string {
+	uniqueID1 := generateUniqID()
+	hash1 := md5Hash(uniqueID1)
+	uniqueID2 := generateUniqID()
+	hash2 := md5Hash(uniqueID2)
+
+	return hash1 + hash2
+}
+
+func generateUniqID() string {
+	now := time.Now().UnixNano() / 1000
+	b := make([]byte, 8)
+	_, err := rand.Read(b)
+	if err != nil {
+		return fmt.Sprintf("%d", now)
+	}
+
+	return fmt.Sprintf("%d%x", now, b)
+}
+
+func md5Hash(input string) string {
+	hash := md5.New()
+	hash.Write([]byte(input))
+	return hex.EncodeToString(hash.Sum(nil))
+}
+</file>
+
+<file path="CONFIG_SETUP.md">
+# Configuration Setup
+
+## Important: Protecting Your Credentials
+
+Your config files contain sensitive credentials that should **NOT** be committed to version control.
+
+## Setup Instructions
+
+### 1. Add Config Files to `.gitignore`
+
+Add these lines to your `.gitignore` file:
+
+```gitignore
+# Config files with real credentials
+internal/config/config.dev.yaml
+internal/config/config.prod.yaml
+internal/config/config.staging.yaml
+```
+
+### 2. Copy Example Files
+
+For local development:
+```bash
+cp internal/config/config.dev.yaml.example internal/config/config.dev.yaml
+cp internal/config/config.prod.yaml.example internal/config/config.prod.yaml
+```
+
+### 3. Update With Your Credentials
+
+Edit the copied files with your actual credentials:
+
+**`config.dev.yaml`:**
+- Replace `your_auth0_client_id` with your Auth0 Client ID
+- Replace `your_auth0_client_secret` with your Auth0 Client Secret
+- Replace `your-tenant.us.auth0.com` with your Auth0 domain
+- Update other service URLs as needed
+
+**`config.prod.yaml`:**
+- Use production credentials
+- Update domain to your production domain
+- Ensure `isProd: true` for production security settings
+
+## Files Structure
+
+```
+internal/config/
+├── config.dev.yaml.example     ✅ Commit this (no real credentials)
+├── config.prod.yaml.example    ✅ Commit this (no real credentials)
+├── config.dev.yaml             ❌ DO NOT COMMIT (real credentials)
+├── config.prod.yaml            ❌ DO NOT COMMIT (real credentials)
+└── config.go                   ✅ Commit this
+```
+
+## Environment Variables
+
+Also set these environment variables for database access:
+
+```bash
+export DBUSER=your_db_username
+export DBPASS=your_db_password
+export ENVIRONMENT=dev  # or 'prod'
+```
+
+Or create a `.env` file (already in `.gitignore`):
+
+```env
+ENVIRONMENT=dev
+DBUSER=your_db_username
+DBPASS=your_db_password
+```
+</file>
 
 <file path="internal/config/config.dev.yaml">
 server:
@@ -227,14 +417,65 @@ cors:
   maxAge: 300
 </file>
 
-<file path="internal/database/migrations/001_init.sql">
+<file path="internal/database/migrations/002_create_tables.sql">
+-- Drop tables if they exist
+DROP TABLE IF EXISTS `acl_qr`;
+DROP TABLE IF EXISTS `api_token`;
 DROP TABLE IF EXISTS `sso_integration_mapping`;
+
+-- Create sso_integration_mapping table
 CREATE TABLE `sso_integration_mapping` (
   `id` int(11) NOT NULL auto_increment,
   `ssousername` varchar(255) NOT NULL,
   `aclusername` varchar(80) NOT NULL DEFAULT '',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create api_token table
+CREATE TABLE `api_token` (
+  `id` int(11) NOT NULL auto_increment,
+  `username` varchar(80) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  KEY `username` (`username`)
+  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create acl_qr table
+CREATE TABLE `acl_qr` (
+  `id` int(11) NOT NULL auto_increment,
+  `uuid` varchar(255) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `device_name` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `token` (`token`),
+  CONSTRAINT `fk_acl_qr_token` FOREIGN KEY (`token`) REFERENCES `api_token` (`token`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+</file>
+
+<file path="internal/database/migrations/003_test_data.sql">
+-- Insert test data into sso_integration_mapping
+INSERT INTO `sso_integration_mapping` (`ssousername`, `aclusername`) VALUES
+('john.doe@example.com', 'john.doe'),
+('jane.smith@example.com', 'jane.smith'),
+('test@gmail.com', 'test');
+
+
+-- Note: For api_token and acl_qr, we'll let the application generate the tokens
+-- But here's an example of how the data would look after the application runs:
+
+-- Example of what api_token might contain after app generates tokens
+-- INSERT INTO `api_token` (`username`, `token`) VALUES
+-- ('john.doe', '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'),
+-- ('jane.smith', 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef12345678');
+
+-- Example of what acl_qr might contain after app generates tokens
+-- INSERT INTO `acl_qr` (`uuid`, `token`, `device_name`) VALUES
+-- ('uuid-1', '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef', 'uuid-1'),
+-- ('uuid-2', 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef12345678', 'uuid-2');
 </file>
 
 <file path=".gitignore">
@@ -273,48 +514,10 @@ main
 .DS_Store
 </file>
 
-<file path="go.mod">
-module gothtest
-
-go 1.25.1
-
-require (
-	github.com/go-chi/chi/v5 v5.2.3
-	github.com/go-chi/cors v1.2.2
-	github.com/gorilla/sessions v1.4.0
-	github.com/joho/godotenv v1.5.1
-	github.com/markbates/goth v1.82.0
-	github.com/spf13/viper v1.21.0
-)
-
-require (
-	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/beevik/etree v1.5.0 // indirect
-	github.com/crewjam/saml v0.5.1 // indirect
-	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/go-sql-driver/mysql v1.9.3 // indirect
-	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
-	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
-	github.com/gorilla/securecookie v1.1.2 // indirect
-	github.com/jonboulle/clockwork v0.2.2 // indirect
-	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
-	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
-	github.com/rogpeppe/go-internal v1.13.1 // indirect
-	github.com/russellhaering/goxmldsig v1.4.0 // indirect
-	github.com/sagikazarmark/locafero v0.11.0 // indirect
-	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
-	github.com/spf13/afero v1.15.0 // indirect
-	github.com/spf13/cast v1.10.0 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/subosito/gotenv v1.6.0 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.35.0 // indirect
-	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
-)
+<file path="example.env">
+ENVIRONMENT=
+DBUSER=
+DBPASS=
 </file>
 
 <file path="Makefile">
@@ -384,6 +587,50 @@ watch:
 .PHONY: all build run test clean watch docker-run docker-down itest
 </file>
 
+<file path="go.mod">
+module gothtest
+
+go 1.25.1
+
+require (
+	github.com/go-chi/chi/v5 v5.2.3
+	github.com/go-chi/cors v1.2.2
+	github.com/gorilla/sessions v1.4.0
+	github.com/joho/godotenv v1.5.1
+	github.com/markbates/goth v1.82.0
+	github.com/spf13/viper v1.21.0
+)
+
+require (
+	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/beevik/etree v1.5.0 // indirect
+	github.com/crewjam/saml v0.5.1 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
+	github.com/go-sql-driver/mysql v1.9.3 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
+	github.com/jonboulle/clockwork v0.2.2 // indirect
+	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
+	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/russellhaering/goxmldsig v1.4.0 // indirect
+	github.com/sagikazarmark/locafero v0.11.0 // indirect
+	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
+	github.com/spf13/afero v1.15.0 // indirect
+	github.com/spf13/cast v1.10.0 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
+	github.com/subosito/gotenv v1.6.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
+	golang.org/x/oauth2 v0.30.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
+)
+</file>
+
 <file path="README.md">
 # Project gothtest
 
@@ -427,6 +674,7 @@ func main() {
 	if env == "" {
 		env = "dev"
 	}
+
 	config, err := config.LoadConfigForEnv(env)
 	if err != nil {
 		log.Fatal(err)
@@ -436,20 +684,20 @@ func main() {
 		log.Fatalf("Failed to initialize auth: %v", err)
 	}
 
-	srv := server.NewServer(config)
-
-	err = srv.ListenAndServe()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	if err := database.NewConnection(); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer database.Close()
 
+	srv := server.NewServer(config)
+
 	fmt.Printf("Environment: %s\n", env)
-	fmt.Printf("Server is running on %s:%d\n", config.Server.Port)
+	fmt.Printf("Server is running on port %d\n", config.Server.Port)
+
+	err = srv.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 }
 </file>
@@ -503,6 +751,7 @@ func Auth(config *config.Config) error {
 	var MaxAge = config.Session.MaxAge
 	var IsProd = config.Session.IsProd
 	sessionKey, err := GenerateRandomKey(32)
+
 	if err != nil {
 		log.Fatal("Error generating random key: %v", err)
 	}
@@ -512,7 +761,6 @@ func Auth(config *config.Config) error {
 	store.Options.Secure = IsProd
 	store.Options.HttpOnly = config.Session.HttpOnly
 	store.Options.SameSite = http.SameSiteLaxMode
-	store.Options.Domain = "localhost" // Allow cookie to work across different ports on localhost
 	gothic.Store = store
 
 	goth.UseProviders(
@@ -527,13 +775,11 @@ func Auth(config *config.Config) error {
 package database
 
 import (
-	"crypto/md5"
-	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
 	"fmt"
 	"os"
-	"time"
+
+	"gothtest/internal/utils"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -546,7 +792,7 @@ func NewConnection() error {
 	cfg.Passwd = os.Getenv("DBPASS")
 	cfg.Net = "tcp"
 	cfg.Addr = "127.0.0.1:3306"
-	cfg.DBName = "sso_integration_mapping"
+	cfg.DBName = "sso_testing"
 
 	var err error
 	DB, err = sql.Open("mysql", cfg.FormatDSN())
@@ -568,14 +814,14 @@ func Close() error {
 	return nil
 }
 
-func InsertSSOIntegrationMapping(ssoUsername string, aclUsername string, uuid string) error {
-	token := GenerateToken()
+func InsertSSOIntegrationMapping(ssoUsername string, uuid string) error {
+	token := utils.GenerateToken()
 	findUser, err := DB.Query("SELECT * FROM sso_integration_mapping WHERE ssousername = ?", ssoUsername)
 	if err != nil {
 		return fmt.Errorf("insertSSOIntegrationMapping: %v", err)
 	}
 	if findUser.Next() {
-		_, err = DB.Query("INSERT INTO api_token (`username`, `token`) VALUES (?, ?)", aclUsername, token)
+		_, err := DB.Query("INSERT INTO api_token (`username`, `token`) VALUES (?, ?)", ssoUsername, token)
 		if err != nil {
 			return fmt.Errorf("error inserting api token: %v", err)
 		}
@@ -585,36 +831,6 @@ func InsertSSOIntegrationMapping(ssoUsername string, aclUsername string, uuid st
 		}
 	}
 	return nil
-}
-
-func GenerateToken() string {
-	uniqueID1 := generateUniqID()
-	hash1 := md5Hash(uniqueID1)
-
-	// Generate second unique ID
-	uniqueID2 := generateUniqID()
-	hash2 := md5Hash(uniqueID2)
-
-	// Combine both hashes
-	return hash1 + hash2
-}
-
-func generateUniqID() string {
-	// Get current timestamp in microseconds
-	now := time.Now().UnixNano() / 1000
-
-	// Generate 8 random bytes
-	b := make([]byte, 8)
-	rand.Read(b)
-
-	// Combine timestamp and random bytes
-	return fmt.Sprintf("%d%x", now, b)
-}
-
-func md5Hash(input string) string {
-	hash := md5.New()
-	hash.Write([]byte(input))
-	return hex.EncodeToString(hash.Sum(nil))
 }
 </file>
 
@@ -654,7 +870,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 func (s *Server) getAuthCallBackHandler(w http.ResponseWriter, r *http.Request) {
 
 	provider := chi.URLParam(r, "provider")
-	uuid := r.URL.Query().Get("uuid")
 
 	r = r.WithContext(context.WithValue(r.Context(), "provider", provider))
 
@@ -664,18 +879,47 @@ func (s *Server) getAuthCallBackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Retrieve UUID from session
+	session, err := gothic.Store.Get(r, gothic.SessionName)
+	if err != nil {
+		fmt.Fprintln(w, "Error getting session:", err)
+		return
+	}
+
+	uuid, ok := session.Values["uuid"].(string)
+	if !ok || uuid == "" {
+		fmt.Fprintln(w, "UUID not found in session")
+		return
+	}
+
 	if user.Provider == "auth0" {
-		err = database.InsertSSOIntegrationMapping(user.Name, user.UserID, uuid)
+		err = database.InsertSSOIntegrationMapping(user.Name, uuid)
 		if err != nil {
 			fmt.Fprintln(w, err)
 			return
 		}
 	}
-
 }
 
 func (s *Server) getLoginHandler(w http.ResponseWriter, r *http.Request) {
 	provider := chi.URLParam(r, "provider")
+	uuid := r.URL.Query().Get("uuid")
+
+	// Save UUID in session
+	session, err := gothic.Store.Get(r, gothic.SessionName)
+	if err != nil {
+		fmt.Fprintln(w, "Error getting session:", err)
+		return
+	}
+
+	fmt.Printf("session: %s\n", session)
+	session.Values["uuid"] = uuid
+	err = session.Save(r, w)
+	if err != nil {
+		fmt.Fprintln(w, "Error saving session:", err)
+		return
+	}
+
 	r = r.WithContext(context.WithValue(r.Context(), "provider", provider))
 	gothic.BeginAuthHandler(w, r)
 }

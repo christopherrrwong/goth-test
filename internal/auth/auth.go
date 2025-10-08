@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"gothtest/internal/config"
+	"sso-auth/internal/config"
 
 	"github.com/gorilla/sessions"
 	"github.com/markbates/goth"
@@ -46,6 +46,7 @@ func Auth(config *config.Config) error {
 	var MaxAge = config.Session.MaxAge
 	var IsProd = config.Session.IsProd
 	sessionKey, err := GenerateRandomKey(32)
+
 	if err != nil {
 		log.Fatal("Error generating random key: %v", err)
 	}
@@ -55,7 +56,6 @@ func Auth(config *config.Config) error {
 	store.Options.Secure = IsProd
 	store.Options.HttpOnly = config.Session.HttpOnly
 	store.Options.SameSite = http.SameSiteLaxMode
-	store.Options.Domain = "localhost" // Allow cookie to work across different ports on localhost
 	gothic.Store = store
 
 	goth.UseProviders(

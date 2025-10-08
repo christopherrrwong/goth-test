@@ -20,6 +20,7 @@ CREATE TABLE `api_token` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `token` (`token`),
   KEY `username` (`username`)
+  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create acl_qr table

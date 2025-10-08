@@ -1,4 +1,4 @@
-module gothtest
+module sso-auth
 
 go 1.25.1
 

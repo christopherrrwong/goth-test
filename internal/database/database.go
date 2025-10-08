@@ -1,13 +1,11 @@
 package database
 
 import (
-	"crypto/md5"
-	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
 	"fmt"
 	"os"
-	"time"
+
+	"sso-auth/internal/utils"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -42,14 +40,14 @@ func Close() error {
 	return nil
 }
 
-func InsertSSOIntegrationMapping(ssoUsername string, aclUsername string, uuid string) error {
-	token := GenerateToken()
+func InsertSSOIntegrationMapping(ssoUsername string, uuid string) error {
+	token := utils.GenerateToken()
 	findUser, err := DB.Query("SELECT * FROM sso_integration_mapping WHERE ssousername = ?", ssoUsername)
 	if err != nil {
 		return fmt.Errorf("insertSSOIntegrationMapping: %v", err)
 	}
 	if findUser.Next() {
-		_, err := DB.Query("INSERT INTO api_token (`username`, `token`) VALUES (?, ?)", aclUsername, token)
+		_, err := DB.Query("INSERT INTO api_token (`username`, `token`) VALUES (?, ?)", ssoUsername, token)
 		if err != nil {
 			return fmt.Errorf("error inserting api token: %v", err)
 		}
@@ -59,34 +57,4 @@ func InsertSSOIntegrationMapping(ssoUsername string, aclUsername string, uuid st
 		}
 	}
 	return nil
-}
-
-func GenerateToken() string {
-	uniqueID1 := generateUniqID()
-	hash1 := md5Hash(uniqueID1)
-
-	// Generate second unique ID
-	uniqueID2 := generateUniqID()
-	hash2 := md5Hash(uniqueID2)
-
-	// Combine both hashes
-	return hash1 + hash2
-}
-
-func generateUniqID() string {
-	// Get current timestamp in microseconds
-	now := time.Now().UnixNano() / 1000
-
-	// Generate 8 random bytes
-	b := make([]byte, 8)
-	rand.Read(b)
-
-	// Combine timestamp and random bytes
-	return fmt.Sprintf("%d%x", now, b)
-}
-
-func md5Hash(input string) string {
-	hash := md5.New()
-	hash.Write([]byte(input))
-	return hex.EncodeToString(hash.Sum(nil))
 }

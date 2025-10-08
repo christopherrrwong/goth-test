@@ -1,0 +1,38 @@
+server:
+  port: 3000
+
+session:
+  maxAge: 2592000  # 30 days in seconds
+  isProd: false
+  httpOnly: true
+  sessionKey: "your-32-char-secret-key-here-change-me"
+
+auth0:
+  clientId: "your_auth0_client_id"
+  clientSecret: "your_auth0_client_secret"
+  domain: "your-tenant.us.auth0.com"
+  callbackUrl: "http://localhost:3000/sso-auth/auth0/callback"
+
+saml:
+  idpMetadataURL: "https://your-idp.com/metadata"
+  rootURL: "http://localhost:3000"
+  entityID: "http://localhost:3000"
+
+cors:
+  allowedOrigins:
+    - "https://*"
+    - "http://*"
+  allowedMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+    - "PATCH"
+  allowedHeaders:
+    - "Accept"
+    - "Authorization"
+    - "Content-Type"
+  allowCredentials: true
+  maxAge: 300
+

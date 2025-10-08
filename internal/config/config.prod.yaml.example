@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+session:
+  maxAge: 2592000  # 30 days in seconds
+  isProd: true
+  httpOnly: true
+
+auth0:
+  clientId: "your_auth0_client_id"
+  clientSecret: "your_auth0_client_secret"
+  domain: "your-tenant.us.auth0.com"
+  callbackUrl: "https://yourdomain.com/sso-auth/auth0/callback"
+
+cors:
+  allowedOrigins:
+    - "https://yourdomain.com"
+  allowedMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+    - "PATCH"
+  allowedHeaders:
+    - "Accept"
+    - "Authorization"
+    - "Content-Type"
+  allowCredentials: true
+  maxAge: 300
+
