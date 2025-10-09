@@ -2,9 +2,9 @@ server:
   port: 3000
 
 session:
-  maxAge: 2592000  # 30 days in seconds
+  maxAge: 500  
   isProd: false
-  httpOnly: true
+
 
 auth0:
   clientId: fri8Ts4HIWDtcVSbaAfLe1bSZSU62S5n

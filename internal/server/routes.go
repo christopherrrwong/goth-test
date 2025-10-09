@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"sso-auth/internal/database"
 
@@ -36,25 +35,25 @@ func (s *Server) getAuthCallBackHandler(w http.ResponseWriter, r *http.Request) 
 
 	r = r.WithContext(context.WithValue(r.Context(), "provider", provider))
 
-	uuid, err := r.Cookie("uuid") // TODO: could be null
-	if err != nil {
-		http.Error(w, "Error getting uuid from cookie", http.StatusBadRequest)
-		return
-	}
+	uuid, err := r.Cookie("uuid")
 
-	fmt.Printf("uuid from cookie: %s\n", uuid.Value)
+	var uuidValue string
+
+	if uuid == nil {
+		uuidValue = ""
+	} else {
+		uuidValue = uuid.Value
+	}
 
 	user, err := gothic.CompleteUserAuth(w, r)
 	if err != nil {
-		// fmt.Fprintln(w, err)
-		http.Error(w, "Error completing user auth", http.StatusBadRequest)
+		http.Error(w, "Error completing user auth", http.StatusUnauthorized)
 		return
 	}
 
 	if user.Provider == "auth0" {
-		err = database.InsertSSOIntegrationMapping(user.Name, uuid.Value)
+		err = database.InsertSSOIntegrationMapping(user.Name, uuidValue)
 		if err != nil {
-			// fmt.Fprintln(w, err)
 			http.Error(w, "Error inserting sso integration mapping", http.StatusInternalServerError)
 			return
 		}
@@ -63,9 +62,12 @@ func (s *Server) getAuthCallBackHandler(w http.ResponseWriter, r *http.Request) 
 
 func (s *Server) getLoginHandler(w http.ResponseWriter, r *http.Request) {
 	provider := chi.URLParam(r, "provider")
-	uuid := r.URL.Query().Get("uuid")
+	if provider == "" {
+		http.Error(w, "Error getting provider", http.StatusBadRequest)
+		return
+	}
 
-	fmt.Printf("uuid: %s\n", uuid)
+	uuid := r.URL.Query().Get("uuid")
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "uuid",
@@ -74,11 +76,10 @@ func (s *Server) getLoginHandler(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   300,
 		SameSite: http.SameSiteLaxMode,
 		HttpOnly: true,
-		// Secure:  true, // TODO: production only
+		Secure:   s.config.Session.IsProd,
 	})
 
 	r = r.WithContext(context.WithValue(r.Context(), "provider", provider))
-
 	gothic.BeginAuthHandler(w, r)
 
 }

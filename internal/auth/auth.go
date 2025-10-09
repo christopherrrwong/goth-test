@@ -1,27 +1,16 @@
 package auth
 
 import (
-	"crypto/rand"
-	"fmt"
-	"log"
 	"net/http"
 
 	"sso-auth/internal/config"
 
+	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/auth0"
 )
-
-func GenerateRandomKey(length int) ([]byte, error) {
-	key := make([]byte, length)
-	_, err := rand.Read(key)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read random bytes: %w", err)
-	}
-	return key, nil
-}
 
 func Auth(config *config.Config) error {
 
@@ -45,16 +34,14 @@ func Auth(config *config.Config) error {
 
 	var MaxAge = config.Session.MaxAge
 	var IsProd = config.Session.IsProd
-	sessionKey, err := GenerateRandomKey(32)
 
-	if err != nil {
-		log.Fatal("Error generating random key: %v", err)
-	}
+	hashKey := securecookie.GenerateRandomKey(64)
+	blockKey := securecookie.GenerateRandomKey(32)
 
-	var store = sessions.NewCookieStore([]byte(sessionKey))
+	var store = sessions.NewCookieStore(hashKey, blockKey)
 	store.Options.MaxAge = MaxAge
 	store.Options.Secure = IsProd
-	store.Options.HttpOnly = config.Session.HttpOnly
+	store.Options.HttpOnly = true
 	store.Options.SameSite = http.SameSiteLaxMode
 	gothic.Store = store
 
