@@ -25,6 +25,13 @@ tmp/
 # .env file
 .env
 
+# Config files with real credentials
+internal/config/config.dev.yaml
+internal/config/config.prod.yaml
+
+# Repomix output file
+repomix-output.xml
+
 # Project build
 main
 *templ.go

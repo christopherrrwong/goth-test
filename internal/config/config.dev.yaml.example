@@ -13,10 +13,6 @@ auth0:
   domain: "your-tenant.us.auth0.com"
   callbackUrl: "http://localhost:3000/sso-auth/auth0/callback"
 
-saml:
-  idpMetadataURL: "https://your-idp.com/metadata"
-  rootURL: "http://localhost:3000"
-  entityID: "http://localhost:3000"
 
 cors:
   allowedOrigins:

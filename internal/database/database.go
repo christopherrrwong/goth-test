@@ -17,8 +17,8 @@ func NewConnection() error {
 	cfg.User = os.Getenv("DBUSER")
 	cfg.Passwd = os.Getenv("DBPASS")
 	cfg.Net = "tcp"
-	cfg.Addr = "127.0.0.1:3306"
-	cfg.DBName = "sso_testing"
+	cfg.Addr = os.Getenv("DBHOST")
+	cfg.DBName = os.Getenv("DBNAME")
 
 	var err error
 	DB, err = sql.Open("mysql", cfg.FormatDSN())

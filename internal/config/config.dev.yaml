@@ -12,10 +12,6 @@ auth0:
   domain: dev-i20fi4w0wonkzxbt.us.auth0.com
   callbackUrl: "http://localhost:3000/sso-auth/auth0/callback"
 
-saml:
-  idpMetadataURL: "https://dummyidp.com/apps/app_01k5qr8k1kr1e457dmsfr0acmh/metadata"
-  rootURL: "http://localhost:3000"
-  entityID: "http://localhost:3000"
 
 cors:
   allowedOrigins:
