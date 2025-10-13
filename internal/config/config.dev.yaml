@@ -13,6 +13,18 @@ auth0:
   callbackUrl: "http://localhost:3000/sso-auth/auth0/callback"
 
 
+#example for google config
+google:
+  googleKey: 1010101010101010101010101010101010101010
+  googleSecret: 1010101010101010101010101010101010101010
+  callbackUrl: "http://localhost:3000/sso-auth/google/callback"
+
+#example for azuread config (azure AD)
+azuread:
+  azureadKey: 1010101010101010101010101010101010101010
+  azureadSecret: 1010101010101010101010101010101010101010
+  callbackUrl: "http://localhost:3000/sso-auth/azuread/callback"
+
 cors:
   allowedOrigins:
     - "https://*"

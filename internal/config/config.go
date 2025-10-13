@@ -25,6 +25,18 @@ type Config struct {
 		CallbackURL  string `mapstructure:"callbackUrl"`
 	} `mapstructure:"auth0"`
 
+	Google struct {
+		GoogleKey    string `mapstructure:"googleKey"`
+		GoogleSecret string `mapstructure:"googleSecret"`
+		CallbackURL  string `mapstructure:"callbackUrl"`
+	} `mapstructure:"google"`
+
+	AzureAD struct {
+		AzureADKey    string `mapstructure:"azureadKey"`
+		AzureADSecret string `mapstructure:"azureadSecret"`
+		CallbackURL   string `mapstructure:"callbackUrl"`
+	} `mapstructure:"azuread"`
+
 	Saml struct {
 		IDPMetadataURL string `mapstructure:"idpMetadataURL"`
 		RootURL        string `mapstructure:"rootURL"`

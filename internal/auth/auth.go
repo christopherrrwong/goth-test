@@ -10,27 +10,11 @@ import (
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/auth0"
+	"github.com/markbates/goth/providers/azuread"
+	"github.com/markbates/goth/providers/google"
 )
 
 func Auth(config *config.Config) error {
-
-	var providers []goth.Provider
-
-	auth0ClientID := config.Auth0.ClientID
-	auth0ClientSecret := config.Auth0.ClientSecret
-	auth0Domain := config.Auth0.Domain
-	auth0CallbackURL := config.Auth0.CallbackURL
-
-	validAuth0Config := auth0ClientID != "" && auth0ClientSecret != "" && auth0Domain != "" && auth0CallbackURL != ""
-
-	if validAuth0Config {
-		providers = append(providers, auth0.New(
-			auth0ClientID,
-			auth0ClientSecret,
-			auth0CallbackURL,
-			auth0Domain,
-		))
-	}
 
 	var MaxAge = config.Session.MaxAge
 	var IsProd = config.Session.IsProd
@@ -45,8 +29,25 @@ func Auth(config *config.Config) error {
 	store.Options.SameSite = http.SameSiteLaxMode
 	gothic.Store = store
 
+	//only auth0 is working at the moment for testing purposes.
 	goth.UseProviders(
-		providers...,
+		auth0.New(
+			config.Auth0.ClientID,
+			config.Auth0.ClientSecret,
+			config.Auth0.CallbackURL,
+			config.Auth0.Domain,
+		),
+		google.New(
+			config.Google.GoogleKey,
+			config.Google.GoogleSecret,
+			config.Google.CallbackURL,
+		),
+		azuread.New(
+			config.AzureAD.AzureADKey,
+			config.AzureAD.AzureADSecret,
+			config.AzureAD.CallbackURL,
+			nil,
+		),
 	)
 
 	return nil
